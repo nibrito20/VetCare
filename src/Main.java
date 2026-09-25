@@ -1,5 +1,11 @@
+import conexao.Conexao;
+
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
+
+import model.Animal;
+import dao.AnimalDAO;
 
 public class Main {
 
@@ -11,6 +17,12 @@ public class Main {
 
         } catch (SQLException e) {
             System.out.println("Erro de conexão: " + e.getMessage());
+        }
+
+        AnimalDAO dao = new AnimalDAO();
+        List<Animal> animais = dao.listarTodos();
+        for (Animal a : animais) {
+            System.out.println(a);
         }
     }
 }

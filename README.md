@@ -7,20 +7,25 @@ Sistema de gerenciamento de clínica veterinária, desenvolvido em **Java** com 
 - Java
 - JDBC (MySQL Connector/J)
 - MySQL
+- Python (geração dos gráficos estatísticos)
 
 ## Estrutura do projeto
 
 ```
 VetCare/
 ├── src/
-│   ├── conexao/        # Classe responsável pela conexão com o banco (JDBC)
-│   ├── dao/             # Classes DAO (Data Access Object) — comandos SQL explícitos
-│   ├── model/            # Classes de modelo (entidades do banco)
-│   └── Main.java         # Ponto de entrada da aplicação
-├── config.properties       # Configurações de conexão (não versionado)
-├── config.properties.example # Modelo de configuração
+│   ├── conexao/               # Classe responsável pela conexão com o banco (JDBC)
+│   ├── dao/                    # Classes DAO (Data Access Object) — comandos SQL explícitos
+│   ├── model/                   # Classes de modelo (entidades do banco)
+│   └── Main.java                # Ponto de entrada da aplicação
+├── gerar_graficos.py            # Script Python usado para gerar os gráficos estatísticos
+├── grafico1.png ... grafico6.png # Gráficos gerados para a disciplina de Estatística
+├── config.properties            # Configurações de conexão (não versionado)
+├── config.properties.example    # Modelo de configuração
+├── LICENSE
 └── README.md
 ```
+
 
 ## Modelo de dados
 
@@ -39,6 +44,47 @@ O banco `vetcare` é composto pelas seguintes tabelas:
 | `Exame` | Exames vinculados a um atendimento |
 | `Tratamento` | Extensão de `Atendimento` que indica tratamento associado |
 | `Receita` | Medicamentos prescritos em um tratamento |
+
+## Como rodar o projeto
+
+### Pré-requisitos
+
+- **JDK 17** (ou superior) instalado
+- **MySQL** instalado e rodando localmente (ou acesso a um servidor MySQL)
+- IntelliJ IDEA (ou outra IDE Java de sua preferência)
+- Driver **MySQL Connector/J** (`mysql-connector-j-9.7.0.jar`, ou versão equivalente)
+
+### 1. Clonar o repositório
+
+```bash
+git clone https://github.com/nibrito20/VetCare.git
+cd VetCare
+```
+
+### 2. Configurar a conexão com o banco
+
+O arquivo `config.properties` **não é versionado** (por conter dados sensíveis, como senha). Você precisa criá-lo localmente:
+
+1. Duplique o arquivo `config.properties.example`.
+2. Renomeie a cópia para `config.properties`.
+3. Preencha com os dados do **seu** MySQL local:
+
+```properties
+db.url=jdbc:mysql://localhost:3306/vetcare
+db.usuario=root
+db.senha=SUA_SENHA_AQUI
+```
+
+### 3. Rodar o projeto
+
+Abra `src/Main.java` e execute.
+
+Se tudo estiver configurado corretamente, a saída no console deve abrir a interface.
+
+
+## Gráficos estatísticos
+
+Os gráficos `grafico1.png` a `grafico6.png` foram gerados a partir do script `gerar_graficos.py` e correspondem às análises exigidas pela disciplina de Estatística. Eles são exibidos na interface do sistema.
 
 ## Licença
 

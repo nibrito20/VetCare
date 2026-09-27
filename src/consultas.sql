@@ -1,7 +1,7 @@
 USE vetcare;
 
 -- consulta 1 de filtro
-SELECT Codigo, Nome, Especie, Raca FROM Animal WHERE Especie = 'Cão' ORDER BY Nome ASC;
+SELECT Codigo, Nome, Especie, Raca FROM Animal WHERE Especie = 'Canino' ORDER BY Nome ASC;
 
 -- consulta 2 com join
 SELECT a.Codigo AS ID, an.Nome AS Animal, d.Nome AS Dono, f.Nome AS Veterinario, a.Custo

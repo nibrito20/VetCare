@@ -189,7 +189,7 @@ public class Main extends JFrame {
         JPanel painel = new JPanel(new BorderLayout(10, 10));
 
         JPanel painelBotoes = new JPanel(new FlowLayout());
-        JButton btnC1 = new JButton("1. Filtro (Cães)");
+        JButton btnC1 = new JButton("1. Filtro (Caninos)");
         JButton btnC2 = new JButton("2. Atendimentos (JOIN)");
         JButton btnC3 = new JButton("3. Agregação por Espécie");
         JButton btnC4 = new JButton("4. Vet. Acima da Média");
@@ -200,7 +200,7 @@ public class Main extends JFrame {
         modeloTabela = new DefaultTableModel();
         tabelaConsultas = new JTable(modeloTabela);
 
-        btnC1.addActionListener(e -> executarSQL("SELECT Codigo, Nome, Especie, Raca FROM Animal WHERE Especie = 'Cão' ORDER BY Nome ASC"));
+        btnC1.addActionListener(e -> executarSQL("SELECT Codigo, Nome, Especie, Raca FROM Animal WHERE Especie = 'Canino' ORDER BY Nome ASC"));
         btnC2.addActionListener(e -> executarSQL(
                 "SELECT a.Codigo AS ID, an.Nome AS Animal, d.Nome AS Dono, f.Nome AS Veterinario, a.Custo " +
                         "FROM Atendimento a " +

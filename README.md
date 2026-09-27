@@ -79,8 +79,7 @@ db.senha=SUA_SENHA_AQUI
 
 Abra `src/Main.java` e execute.
 
-Se tudo estiver configurado corretamente,a janela da interface abrirá.
-
+Se tudo estiver configurado corretamente, a interface do sistema será exibida.
 
 ## Gráficos estatísticos
 

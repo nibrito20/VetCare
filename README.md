@@ -14,14 +14,14 @@ Sistema de gerenciamento de clínica veterinária, desenvolvido em **Java** com 
 ```
 VetCare/
 ├── src/
-│   ├── conexao/               # Classe responsável pela conexão com o banco (JDBC)
-│   ├── dao/                    # Classes DAO (Data Access Object) — comandos SQL explícitos
-│   ├── model/                   # Classes de modelo (entidades do banco)
-│   └── Main.java                # Ponto de entrada da aplicação
-├── gerar_graficos.py            # Script Python usado para gerar os gráficos estatísticos
-├── grafico1.png ... grafico6.png # Gráficos gerados para a disciplina de Estatística
-├── config.properties            # Configurações de conexão (não versionado)
-├── config.properties.example    # Modelo de configuração
+│   ├── conexao/
+│   ├── dao/
+│   ├── model/
+│   └── Main.java
+├── gerar_graficos.py
+├── grafico1.png ... grafico6.png
+├── config.properties (não versionado)
+├── config.properties.example
 ├── LICENSE
 └── README.md
 ```

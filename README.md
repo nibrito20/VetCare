@@ -1,6 +1,6 @@
 # VetCare
 
-Sistema de gerenciamento de clínica veterinária, desenvolvido em **Java** com integração ao **MySQL** via **JDBC**, para a disciplina de Banco de Dados.
+Sistema de gerenciamento para uma clínica veterinária, desenvolvido em **Java** com integração ao **MySQL** via **JDBC**, para a disciplina de Banco de Dados.
 
 ## Tecnologias
 

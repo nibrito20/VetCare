@@ -6,6 +6,18 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import mysql.connector
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_PATH = os.path.join(BASE_DIR, 'config.properties')
+PASTA_GRAFICOS = os.path.join(BASE_DIR, 'graficos')
+
+os.makedirs(PASTA_GRAFICOS, exist_ok=True)
+
+
+def salvar(nome_arquivo):
+    plt.savefig(os.path.join(PASTA_GRAFICOS, nome_arquivo))
+    plt.close()
+
+
 #le config.properties
 config = {}
 if os.path.exists('config.properties'):
@@ -64,8 +76,7 @@ plt.xlabel('Custo (R$)', fontsize=11)
 plt.ylabel('Frequência', fontsize=11)
 plt.grid(axis='y', alpha=0.75)
 plt.tight_layout()
-plt.savefig('grafico1.png')
-plt.close()
+salvar('grafico1.png')
 
 plt.figure(figsize=(8, 5))
 sns.kdeplot(dados, fill=True, color='purple', alpha=0.4)
@@ -74,8 +85,7 @@ plt.xlabel('Custo (R$)', fontsize=11)
 plt.ylabel('Densidade', fontsize=11)
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.savefig('grafico2.png')
-plt.close()
+salvar('grafico2.png')
 
 plt.figure(figsize=(10, 6))
 sns.histplot(dados, kde=True, color='skyblue', edgecolor='black', alpha=0.7, line_kws={'color': 'black', 'linewidth': 2})
@@ -89,8 +99,7 @@ plt.ylabel('Frequência / Densidade', fontsize=12)
 plt.legend()
 plt.grid(axis='y', alpha=0.75)
 plt.tight_layout()
-plt.savefig('grafico3.png')
-plt.close()
+salvar('grafico3.png')
 
 plt.figure(figsize=(6, 6))
 sns.boxplot(y=dados, color='lightgreen')
@@ -98,8 +107,7 @@ plt.title('Gráfico 4 - Boxplot Simples', fontsize=14, fontweight='bold')
 plt.ylabel('Custo (R$)', fontsize=12)
 plt.grid(axis='y', alpha=0.75)
 plt.tight_layout()
-plt.savefig('grafico4.png')
-plt.close()
+salvar('grafico4.png')
 
 plt.figure(figsize=(8, 6))
 sns.boxplot(y=dados, color='lightgreen')
@@ -107,8 +115,7 @@ plt.title('Gráfico 5 - Boxplot Detalhado dos Atendimentos', fontsize=15, fontwe
 plt.ylabel('Custo em Reais (R$)', fontsize=12)
 plt.grid(axis='y', alpha=0.75)
 plt.tight_layout()
-plt.savefig('grafico5.png')
-plt.close()
+salvar('grafico5.png')
 
 f, (ax_box, ax_hist) = plt.subplots(2, sharex=True, gridspec_kw={"height_ratios": (0.8, 1.2)}, figsize=(10, 8))
 mean_val = dados.mean()
@@ -130,7 +137,6 @@ ax_hist.legend()
 
 plt.suptitle('Gráfico 6 - Visão Completa dos Custos de Atendimento', fontsize=16, fontweight='bold', y=0.98)
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-plt.savefig('grafico6.png')
-plt.close()
+salvar('grafico6.png')
 
 print("Sucesso! Os 6 gráficos foram gerados a partir do banco MySQL e salvos no projeto.")

@@ -185,7 +185,7 @@ public class Main extends JFrame {
         return painelPrincipal;
     }
 
-    private JPanel criarPainelConsultas() {
+    private JPanel criarPainelConsultas(){
         JPanel painel = new JPanel(new BorderLayout(10, 10));
 
         JPanel painelBotoes = new JPanel(new FlowLayout());
@@ -225,12 +225,12 @@ public class Main extends JFrame {
         JPanel painel = new JPanel(new BorderLayout(10, 10));
 
         JComboBox comboGraficos = new JComboBox<>(new String[]{
-                "Gráfico 6 - Visão Completa (Boxplot + Histograma + KDE)",
                 "Gráfico 1 - Histograma Simples",
                 "Gráfico 2 - Densidade KDE",
                 "Gráfico 3 - Distribuição com Média e Mediana",
                 "Gráfico 4 - Boxplot Simples",
-                "Gráfico 5 - Boxplot Detalhado"
+                "Gráfico 5 - Boxplot Detalhado",
+                "Gráfico 6 - Visão Completa (Boxplot + Histograma + KDE)"
         });
 
         JLabel labelImagem = new JLabel("", SwingConstants.CENTER);
@@ -238,11 +238,11 @@ public class Main extends JFrame {
         Runnable carregarImagem = () -> {
             int index = comboGraficos.getSelectedIndex();
             String[] ficheiros = {
-                    "grafico6.png", "grafico1.png", "grafico2.png",
-                    "grafico3.png", "grafico4.png", "grafico5.png"
+                    "grafico1.png", "grafico2.png", "grafico3.png",
+                    "grafico4.png", "grafico5.png", "grafico6.png"
             };
 
-            File imgFile = new File(ficheiros[index]);
+            File imgFile = new File("graficos", ficheiros[index]);
             if (imgFile.exists()) {
                 ImageIcon icon = new ImageIcon(imgFile.getAbsolutePath());
                 Image img = icon.getImage().getScaledInstance(750, 480, Image.SCALE_SMOOTH);
@@ -250,7 +250,7 @@ public class Main extends JFrame {
                 labelImagem.setText("");
             } else {
                 labelImagem.setIcon(null);
-                labelImagem.setText("O ficheiro '" + ficheiros[index] + "' não foi encontrado na pasta raiz.");
+                labelImagem.setText("O ficheiro '" + ficheiros[index] + "' não foi encontrado na pasta 'graficos'.");
             }
         };
 

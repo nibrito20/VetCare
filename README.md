@@ -14,18 +14,20 @@ Sistema de gerenciamento para uma clínica veterinária, desenvolvido em **Java*
 ```
 VetCare/
 ├── src/
-│   ├── conexao/
-│   ├── dao/
-│   ├── model/
-│   └── Main.java
-├── gerar_graficos.py
-├── grafico1.png ... grafico6.png
-├── config.properties (não versionado)
-├── config.properties.example
+│   ├── conexao/               # Classe responsável pela conexão com o banco (JDBC)
+│   ├── dao/                   # Classes DAO (Data Access Object) — comandos SQL explícitos
+│   ├── model/                 # Classes de modelo (entidades do banco)
+│   └── Main.java              # Ponto de entrada da aplicação
+├── sql/
+│   └── consultas.sql          # Consultas SQL do projeto
+├── graficos/                  # Gráficos (PNG) gerados pelo script Python
+├── requirements.txt           # Dependências do script Python
+├── config.properties          # Configurações de conexão (não versionado)
+├── config.properties.example  # Modelo de configuração
+├── gerar_graficos.py          # Script que gera os gráficos a partir do banco
 ├── LICENSE
 └── README.md
 ```
-
 
 ## Modelo de dados
 
@@ -81,9 +83,19 @@ Abra `src/Main.java` e execute.
 
 Se tudo estiver configurado corretamente, a interface do sistema será exibida.
 
-## Gráficos estatísticos
 
-Os gráficos `grafico1.png` a `grafico6.png` foram gerados a partir do script `gerar_graficos.py` e correspondem às análises exigidas pela disciplina de Estatística. Eles são exibidos na interface do sistema.
+## Gráficos Estatísticos
+
+A pasta `graficos/` contém 6 gráficos (histograma, KDE, boxplots), gerados a partir do script `gerar_graficos.py` e correspondem às análises exigidas pela disciplina de Estatística. Eles são exibidos na interface do sistema.
+
+Para gerá-los novamente a partir do banco:
+
+```bash
+pip install -r requirements.txt
+python gerar_graficos.py
+```
+
+O script usa as credenciais do `config.properties`. Se não conseguir conectar ao banco, gera os gráficos com dados de exemplo.
 
 ## Licença
 

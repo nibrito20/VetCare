@@ -16,20 +16,26 @@ public class Main extends JFrame {
     private JTextField txtAnimalCodigo, txtAnimalNome, txtAnimalEspecie, txtAnimalRaca, txtAnimalIdade, txtAnimalDia, txtAnimalMes, txtAnimalAno, txtAnimalSexo, txtAnimalCpfDono;
     private JTable tabelaConsultas;
     private DefaultTableModel modeloTabela;
+    private JLabel lblTotalClientes = new JLabel("0");
+    private JLabel lblTotalAnimais = new JLabel("0");
+    private JLabel lblTotalAtendimentos = new JLabel("0");
+    private JLabel lblMediaCusto = new JLabel("R$ 0,00");
 
     public Main() {
         setTitle("VetCare - Sistema de Gestão e Dashboard");
-        setSize(1000, 750);
+        setSize(1050, 750);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
         JTabbedPane abas = new JTabbedPane();
 
         abas.addTab("1. Gestão (CRUD)", criarPainelCRUD());
-        abas.addTab("2. Consultas SQL", criarPainelConsultas());
-        abas.addTab("3. Dashboard Estatístico", criarPainelDashboard());
+        abas.addTab("2. Consultas e Views", criarPainelConsultas());
+        abas.addTab("3. Procedures e Triggers", criarPainelProcedures());
+        abas.addTab("4. Dashboard Estatístico", criarPainelDashboard());
 
         add(abas);
+        atualizarIndicadores();
     }
 
     private JPanel criarPainelCRUD() {
@@ -131,6 +137,7 @@ public class Main extends JFrame {
                 d.setNumero(txtDonoNumero.getText());
                 new DonoDAO().inserir(d);
                 JOptionPane.showMessageDialog(this, "Dono inserido com sucesso!");
+                atualizarIndicadores();
             } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage()); }
         });
 
@@ -153,6 +160,7 @@ public class Main extends JFrame {
             try {
                 new DonoDAO().deletar(txtDonoCpf.getText());
                 JOptionPane.showMessageDialog(this, "Dono removido com sucesso!");
+                atualizarIndicadores();
             } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage()); }
         });
 
@@ -170,6 +178,7 @@ public class Main extends JFrame {
                 a.setDonoCpf(txtAnimalCpfDono.getText());
                 new AnimalDAO().inserir(a);
                 JOptionPane.showMessageDialog(this, "Animal inserido com sucesso!");
+                atualizarIndicadores();
             } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage()); }
         });
 
@@ -177,6 +186,7 @@ public class Main extends JFrame {
             try {
                 new AnimalDAO().deletar(Integer.parseInt(txtAnimalCodigo.getText().trim()));
                 JOptionPane.showMessageDialog(this, "Animal removido com sucesso!");
+                atualizarIndicadores();
             } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage()); }
         });
 
@@ -187,42 +197,219 @@ public class Main extends JFrame {
 
     private JPanel criarPainelConsultas(){
         JPanel painel = new JPanel(new BorderLayout(10, 10));
+        painel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JPanel painelBotoes = new JPanel(new FlowLayout());
-        JButton btnC1 = new JButton("1. Filtro (Caninos)");
-        JButton btnC2 = new JButton("2. Atendimentos (JOIN)");
-        JButton btnC3 = new JButton("3. Agregação por Espécie");
-        JButton btnC4 = new JButton("4. Vet. Acima da Média");
+        // Painel superior com o seletor de Consultas e Views
+        JPanel painelTopo = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        painelTopo.setBorder(BorderFactory.createTitledBorder("Visualização de Consultas e Views"));
 
-        painelBotoes.add(btnC1); painelBotoes.add(btnC2);
-        painelBotoes.add(btnC3); painelBotoes.add(btnC4);
+        JComboBox<String> comboConsultas = new JComboBox<>(new String[]{
+                // Etapa 3
+                "1. Animais Caninos (Filtro)",
+                "2. Atendimentos com JOIN Completo",
+                "3. Agregação por Espécie",
+                "4. Veterinários Acima da Média de Custo",
+                // Etapa 4 (Consultas Avançadas)
+                "5. Donos sem Animais (Anti Join)",
+                "6. Animais e Donos (Full Outer Join / UNION)",
+                "7. Atendimentos com Custo Acima da Média (Subconsulta)",
+                "8. Funcionários com Atendimentos Críticos (Subconsulta IN)",
+                // Views
+                "9. VIEW: Prontuário Completo de Atendimentos",
+                "10. VIEW: Prescrições Detalhadas por Animal"
+        });
+
+        JButton btnExecutar = new JButton("Executar Consulta / View");
+        painelTopo.add(new JLabel("Selecione:"));
+        painelTopo.add(comboConsultas);
+        painelTopo.add(btnExecutar);
 
         modeloTabela = new DefaultTableModel();
         tabelaConsultas = new JTable(modeloTabela);
 
-        btnC1.addActionListener(e -> executarSQL("SELECT Codigo, Nome, Especie, Raca FROM Animal WHERE Especie = 'Canino' ORDER BY Nome ASC"));
-        btnC2.addActionListener(e -> executarSQL(
-                "SELECT a.Codigo AS ID, an.Nome AS Animal, d.Nome AS Dono, f.Nome AS Veterinario, a.Custo " +
-                        "FROM Atendimento a " +
-                        "JOIN Animal an ON a.fk_Animal_Codigo = an.Codigo " +
-                        "JOIN Dono d ON an.fk_Dono_CPF = d.CPF " +
-                        "JOIN Funcionario f ON a.fk_Funcionario_CPF = f.CPF"));
-        btnC3.addActionListener(e -> executarSQL(
-                "SELECT an.Especie, COUNT(a.Codigo) AS Total_Atendimentos, SUM(a.Custo) AS Total_Faturado " +
-                        "FROM Atendimento a JOIN Animal an ON a.fk_Animal_Codigo = an.Codigo GROUP BY an.Especie"));
-        btnC4.addActionListener(e -> executarSQL(
-                "SELECT f.Nome AS Veterinario, COUNT(a.Codigo) AS Qtd, SUM(a.Custo) AS Total " +
-                        "FROM Funcionario f JOIN Atendimento a ON f.CPF = a.fk_Funcionario_CPF " +
-                        "GROUP BY f.CPF, f.Nome HAVING SUM(a.Custo) > (SELECT AVG(Custo) FROM Atendimento)"));
+        // Ação do botão para rodar a query correspondente
+        btnExecutar.addActionListener(e -> {
+            int escolha = comboConsultas.getSelectedIndex();
+            String sql = "";
 
-        painel.add(painelBotoes, BorderLayout.NORTH);
+            switch (escolha) {
+                // Etapa 3
+                case 0:
+                    sql = "SELECT Codigo, Nome, Especie, Raca FROM Animal WHERE Especie = 'Canino' ORDER BY Nome ASC";
+                    break;
+                case 1:
+                    sql = "SELECT a.Codigo AS ID, an.Nome AS Animal, d.Nome AS Dono, f.Nome AS Veterinario, a.Custo " +
+                            "FROM Atendimento a " +
+                            "JOIN Animal an ON a.fk_Animal_Codigo = an.Codigo " +
+                            "JOIN Dono d ON an.fk_Dono_CPF = d.CPF " +
+                            "JOIN Funcionario f ON a.fk_Funcionario_CPF = f.CPF";
+                    break;
+                case 2:
+                    sql = "SELECT an.Especie, COUNT(a.Codigo) AS Total_Atendimentos, SUM(a.Custo) AS Total_Faturado " +
+                            "FROM Atendimento a JOIN Animal an ON a.fk_Animal_Codigo = an.Codigo GROUP BY an.Especie";
+                    break;
+                case 3:
+                    sql = "SELECT f.Nome AS Veterinario, COUNT(a.Codigo) AS Qtd, SUM(a.Custo) AS Total " +
+                            "FROM Funcionario f JOIN Atendimento a ON f.CPF = a.fk_Funcionario_CPF " +
+                            "GROUP BY f.CPF, f.Nome HAVING SUM(a.Custo) > (SELECT AVG(Custo) FROM Atendimento)";
+                    break;
+                // Etapa 4 - Consultas Avançadas
+                case 4: // Anti Join
+                    sql = "SELECT d.CPF, d.Nome, d.Cidade FROM Dono d LEFT JOIN Animal a ON d.CPF = a.fk_Dono_CPF WHERE a.Codigo IS NULL";
+                    break;
+                case 5: // Full Outer Join simulado com UNION
+                    sql = "SELECT a.Nome AS Nome_Animal, a.Especie, d.Nome AS Nome_Dono FROM Animal a LEFT JOIN Dono d ON a.fk_Dono_CPF = d.CPF " +
+                            "UNION " +
+                            "SELECT a.Nome AS Nome_Animal, a.Especie, d.Nome AS Nome_Dono FROM Animal a RIGHT JOIN Dono d ON a.fk_Dono_CPF = d.CPF";
+                    break;
+                case 6: // Subconsulta
+                    sql = "SELECT Codigo, Diagnostico, Custo FROM Atendimento WHERE Custo > (SELECT AVG(Custo) FROM Atendimento)";
+                    break;
+                case 7: // Subconsulta IN
+                    sql = "SELECT CPF, Nome, Telefone FROM Funcionario WHERE CPF IN (SELECT fk_Funcionario_CPF FROM Atendimento WHERE Nivel_de_Gravidade = 'Crítica')";
+                    break;
+                // Views
+                case 8:
+                    sql = "SELECT * FROM vw_Prontuario_Completo";
+                    break;
+                case 9:
+                    sql = "SELECT * FROM vw_Presricoes_Detalhadas";
+                    break;
+            }
+
+            if (!sql.isEmpty()) {
+                executarSQL(sql);
+            }
+        });
+
+        painel.add(painelTopo, BorderLayout.NORTH);
         painel.add(new JScrollPane(tabelaConsultas), BorderLayout.CENTER);
         return painel;
     }
 
 
+    private JPanel criarPainelProcedures() {
+        JPanel painel = new JPanel(new BorderLayout(10, 10));
+        painel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JPanel painelTopo = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        painelTopo.setBorder(BorderFactory.createTitledBorder("Execução de Procedures Armazenadas (Etapa 5)"));
+
+        JComboBox<String> comboProcedures = new JComboBox<>(new String[]{
+                "Resumo Animal",
+                "Atualizar Telefone Dono"
+        });
+
+        painelTopo.add(new JLabel("Selecione a Procedure:"));
+        painelTopo.add(comboProcedures);
+
+        JPanel painelFormulario = new JPanel(new CardLayout());
+
+        // Formulário 1: Resumo Animal
+        JPanel cardResumo = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JTextField txtCodAnimal = new JTextField(5);
+        JButton btnExecResumo = new JButton("Executar Resumo");
+        cardResumo.add(new JLabel("Código do Animal (vazio para todos):"));
+        cardResumo.add(txtCodAnimal);
+        cardResumo.add(btnExecResumo);
+
+        // Formulário 2: Atualizar Telefone
+        JPanel cardUpdate = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JTextField txtCpfDono = new JTextField(11);
+        JTextField txtNovoTel = new JTextField(10);
+        JButton btnExecUpdate = new JButton("Atualizar Telefone");
+        cardUpdate.add(new JLabel("CPF do Dono:"));
+        cardUpdate.add(txtCpfDono);
+        cardUpdate.add(new JLabel("Novo Telefone:"));
+        cardUpdate.add(txtNovoTel);
+        cardUpdate.add(btnExecUpdate);
+
+        CardLayout cl = (CardLayout) painelFormulario.getLayout();
+        painelFormulario.add(cardResumo, "Resumo Animal");
+        painelFormulario.add(cardUpdate, "Atualizar Telefone Dono");
+
+        comboProcedures.addActionListener(e -> {
+            String selecionado = (String) comboProcedures.getSelectedItem();
+            cl.show(painelFormulario, selecionado);
+        });
+
+        DefaultTableModel modeloProc = new DefaultTableModel();
+        JTable tabelaProcResult = new JTable(modeloProc);
+
+        btnExecResumo.addActionListener(e -> {
+            String codigo = txtCodAnimal.getText().trim();
+            String sql = codigo.isEmpty() ? "{CALL sp_RelatorioResumoAnimal(NULL)}" : "{CALL sp_RelatorioResumoAnimal(" + codigo + ")}";
+
+            try (Connection conn = Conexao.getConexao();
+                 CallableStatement stmt = conn.prepareCall(sql);
+                 ResultSet rs = stmt.executeQuery()) {
+
+                modeloProc.setRowCount(0);
+                modeloProc.setColumnCount(0);
+                ResultSetMetaData metaData = rs.getMetaData();
+                int cols = metaData.getColumnCount();
+                for (int i = 1; i <= cols; i++) modeloProc.addColumn(metaData.getColumnName(i));
+                while (rs.next()) {
+                    Object[] row = new Object[cols];
+                    for (int i = 1; i <= cols; i++) row[i - 1] = rs.getObject(i);
+                    modeloProc.addRow(row);
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Erro ao executar procedure: " + ex.getMessage());
+            }
+        });
+
+        // Ação do botão de Atualizar Telefone (sp_AtualizarTelefoneDono)
+        btnExecUpdate.addActionListener(e -> {
+            String cpf = txtCpfDono.getText().trim();
+            String novoTel = txtNovoTel.getText().trim();
+
+            if (cpf.isEmpty() || novoTel.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Preencha o CPF e o novo telefone!", "Aviso", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            String sqlCall = "{CALL sp_AtualizarTelefoneDono(?, ?)}";
+            try (Connection conn = Conexao.getConexao();
+                 CallableStatement stmt = conn.prepareCall(sqlCall)) {
+
+                stmt.setString(1, cpf);
+                stmt.setString(2, novoTel);
+                stmt.execute();
+
+                // --> É ESTA MENSAGEM QUE VOCÊ VAI COLAR/ATUALIZAR NO SEU CÓDIGO <--
+                JOptionPane.showMessageDialog(this,
+                        "Sucesso! O telefone do dono (CPF: " + cpf + ") foi alterado para: " + novoTel,
+                        "Atualização Realizada",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                // Limpa os campos após o sucesso
+                txtCpfDono.setText("");
+                txtNovoTel.setText("");
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Erro ao atualizar telefone: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        JPanel painelNorte = new JPanel(new BorderLayout());
+        painelNorte.add(painelTopo, BorderLayout.NORTH);
+        painelNorte.add(painelFormulario, BorderLayout.SOUTH);
+
+        painel.add(painelNorte, BorderLayout.NORTH);
+        painel.add(new JScrollPane(tabelaProcResult), BorderLayout.CENTER);
+
+        return painel;
+    }
+
     private JPanel criarPainelDashboard() {
         JPanel painel = new JPanel(new BorderLayout(10, 10));
+        painel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JPanel painelCards = new JPanel(new GridLayout(1, 4, 10, 10));
+        painelCards.add(criarCard("Total de Clientes", lblTotalClientes));
+        painelCards.add(criarCard("Total de Animais", lblTotalAnimais));
+        painelCards.add(criarCard("Total Atendimentos", lblTotalAtendimentos));
+        painelCards.add(criarCard("Média de Custo", lblMediaCusto));
 
         JComboBox comboGraficos = new JComboBox<>(new String[]{
                 "Gráfico 1 - Histograma Simples",
@@ -245,7 +432,7 @@ public class Main extends JFrame {
             File imgFile = new File("graficos", ficheiros[index]);
             if (imgFile.exists()) {
                 ImageIcon icon = new ImageIcon(imgFile.getAbsolutePath());
-                Image img = icon.getImage().getScaledInstance(750, 480, Image.SCALE_SMOOTH);
+                Image img = icon.getImage().getScaledInstance(700, 400, Image.SCALE_SMOOTH);
                 labelImagem.setIcon(new ImageIcon(img));
                 labelImagem.setText("");
             } else {
@@ -257,14 +444,48 @@ public class Main extends JFrame {
         comboGraficos.addActionListener(e -> carregarImagem.run());
         carregarImagem.run();
 
-        JPanel painelTopo = new JPanel(new FlowLayout());
-        painelTopo.add(new JLabel("Escolha o Gráfico Estatístico:"));
-        painelTopo.add(comboGraficos);
+        JPanel painelTopoGrafico = new JPanel(new FlowLayout());
+        painelTopoGrafico.add(new JLabel("Selecione o Gráfico Estatístico:"));
+        painelTopoGrafico.add(comboGraficos);
 
-        painel.add(painelTopo, BorderLayout.NORTH);
-        painel.add(new JScrollPane(labelImagem), BorderLayout.CENTER);
+        JPanel painelCentro = new JPanel(new BorderLayout());
+        painelCentro.add(painelTopoGrafico, BorderLayout.NORTH);
+        painelCentro.add(new JScrollPane(labelImagem), BorderLayout.CENTER);
+
+        painel.add(painelCards, BorderLayout.NORTH);
+        painel.add(painelCentro, BorderLayout.CENTER);
 
         return painel;
+    }
+
+    private JPanel criarCard(String titulo, JLabel lblValor) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBorder(BorderFactory.createTitledBorder(titulo));
+        lblValor.setFont(new Font("Arial", Font.BOLD, 18));
+        lblValor.setHorizontalAlignment(SwingConstants.CENTER);
+        card.add(lblValor, BorderLayout.CENTER);
+        return card;
+    }
+
+    private void atualizarIndicadores() {
+        try (Connection conn = Conexao.getConexao();
+             Statement stmt = conn.createStatement()) {
+
+            ResultSet rs1 = stmt.executeQuery("SELECT COUNT(*) FROM Dono");
+            if (rs1.next()) lblTotalClientes.setText(rs1.getString(1));
+
+            ResultSet rs2 = stmt.executeQuery("SELECT COUNT(*) FROM Animal");
+            if (rs2.next()) lblTotalAnimais.setText(rs2.getString(1));
+
+            ResultSet rs3 = stmt.executeQuery("SELECT COUNT(*) FROM Atendimento");
+            if (rs3.next()) lblTotalAtendimentos.setText(rs3.getString(1));
+
+            ResultSet rs4 = stmt.executeQuery("SELECT AVG(Custo) FROM Atendimento");
+            if (rs4.next()) {
+                double media = rs4.getDouble(1);
+                lblMediaCusto.setText(String.format("R$ %.2f", media));
+            }
+        } catch (Exception ignored) {}
     }
 
     private void executarSQL(String sql) {

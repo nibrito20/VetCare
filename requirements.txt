@@ -3,3 +3,6 @@ numpy
 matplotlib
 seaborn
 mysql-connector-python
+streamlit>=1.50
+plotly
+sqlalchemy

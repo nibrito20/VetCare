@@ -17,9 +17,16 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.math.BigDecimal;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.sql.*;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -97,6 +104,20 @@ public class Main extends JFrame {
 
             "SELECT * FROM vw_Presricoes_Detalhadas"
     };
+
+    // ---------- Dashboard: descrição de cada gráfico estático ----------
+    private static final String[] GRAFICOS_DESCRICAO = {
+            "Quantos atendimentos caíram em cada faixa de custo. As linhas marcam a média (tracejada) e a mediana.",
+            "Curva suave da distribuição dos custos: os picos mostram onde os valores mais se concentram.",
+            "Histograma com curva de densidade, média (tracejada) e mediana. Distância entre elas indica valores extremos.",
+            "A caixa cobre os 50% centrais dos custos; a linha do meio é a mediana e pontos isolados são atípicos.",
+            "Cada ponto é um atendimento; o losango marca a média. Mostra todos os valores, inclusive os atípicos.",
+            "Junta boxplot, histograma e curva de densidade no mesmo eixo, com média e mediana marcadas."
+    };
+
+    // ---------- BI interativo (Streamlit) ----------
+    private static final int PORTA_BI = 8501;
+    private volatile Process processoBI;
 
     // ---------- Início: últimos atendimentos ----------
     // Ordena pelo código (maior = mais recente). Se a tabela tiver uma coluna de data,
@@ -188,6 +209,12 @@ public class Main extends JFrame {
 
         // Reverifica a conexão de tempos em tempos (e recarrega os dados quando ela volta)
         new javax.swing.Timer(15000, e -> verificarConexao()).start();
+
+        // Se este app iniciou o BI, desliga o servidor ao fechar a janela
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            Process p = processoBI;
+            if (p != null) p.destroy();
+        }));
     }
 
     // =====================================================================
@@ -873,22 +900,146 @@ public class Main extends JFrame {
         comboGraficos.setPreferredSize(new Dimension(400, 40));
 
         Tema.ImagemAjustada imagem = new Tema.ImagemAjustada();
-        Runnable carregarImagem = () ->
-                imagem.mostrar(new File("graficos", ficheiros[comboGraficos.getSelectedIndex()]));
+        JLabel lblDescGrafico = Tema.textoSuave(GRAFICOS_DESCRICAO[0]);
+        JLabel lblDataGraficos = Tema.textoSuave(" ");
+        Runnable carregarImagem = () -> {
+            int i = comboGraficos.getSelectedIndex();
+            File arquivo = new File("graficos", ficheiros[i]);
+            imagem.mostrar(arquivo);
+            lblDescGrafico.setText(GRAFICOS_DESCRICAO[i]);
+            lblDataGraficos.setText(textoDataGrafico(arquivo));
+        };
         comboGraficos.addActionListener(e -> carregarImagem.run());
         carregarImagem.run();
 
+        // Topo do cartão: título + seletor, e logo abaixo a explicação do gráfico escolhido
         JPanel topoGrafico = Tema.painel(new BorderLayout());
         topoGrafico.add(Tema.titulo("Análise estatística dos custos"), BorderLayout.WEST);
         topoGrafico.add(comboGraficos, BorderLayout.EAST);
+        JPanel cabGrafico = Tema.painel(new BorderLayout(0, 6));
+        cabGrafico.add(topoGrafico, BorderLayout.NORTH);
+        cabGrafico.add(lblDescGrafico, BorderLayout.CENTER);
+
+        // Rodapé do cartão: data de geração + botão que abre o BI interativo
+        Tema.Botao btnBI = new Tema.Botao("Abrir BI interativo", Tema.Tipo.PRIMARIO);
+        btnBI.addActionListener(e -> abrirBI(btnBI));
+        JPanel rodapeGrafico = Tema.painel(new BorderLayout(12, 0));
+        rodapeGrafico.add(lblDataGraficos, BorderLayout.CENTER);
+        rodapeGrafico.add(btnBI, BorderLayout.EAST);
 
         Tema.Cartao cartaoGrafico = new Tema.Cartao(new BorderLayout(0, 14), 20);
-        cartaoGrafico.add(topoGrafico, BorderLayout.NORTH);
+        cartaoGrafico.add(cabGrafico, BorderLayout.NORTH);
         cartaoGrafico.add(imagem, BorderLayout.CENTER);
+        cartaoGrafico.add(rodapeGrafico, BorderLayout.SOUTH);
 
         painel.add(cards, BorderLayout.NORTH);
         painel.add(cartaoGrafico, BorderLayout.CENTER);
         return painel;
+    }
+
+    /** Texto "gerado em ..." com base na data de modificação do arquivo PNG. */
+    private String textoDataGrafico(File arquivo) {
+        if (!arquivo.exists()) return "Gráfico ainda não gerado. Execute o gerar_graficos.py.";
+        LocalDateTime quando = LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(arquivo.lastModified()), ZoneId.systemDefault());
+        return "Gráficos estáticos gerados em "
+                + quando.format(DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm", PT_BR))
+                + ". Para dados em tempo real, use o BI.";
+    }
+
+    // =====================================================================
+    //  BI interativo (Streamlit): inicia o servidor e abre o navegador
+    // =====================================================================
+    private static boolean biRodando() {
+        try (Socket s = new Socket()) {
+            s.connect(new InetSocketAddress("localhost", PORTA_BI), 300);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    /** Usa o Python do ambiente virtual (.venv) se existir; senão, o Python do sistema. */
+    private List<String> comandoBI() {
+        boolean windows = System.getProperty("os.name", "").toLowerCase().contains("win");
+        File venv = new File(windows ? ".venv/Scripts/python.exe" : ".venv/bin/python").getAbsoluteFile();
+        String python = venv.exists() ? venv.getPath() : (windows ? "python" : "python3");
+        return List.of(python, "-m", "streamlit", "run", "app_bi.py",
+                "--server.headless", "true",
+                "--server.port", String.valueOf(PORTA_BI),
+                "--browser.gatherUsageStats", "false");
+    }
+
+    private static String fimDoLog(File log) {
+        try {
+            List<String> linhas = Files.readAllLines(log.toPath());
+            return String.join("\n", linhas.subList(Math.max(0, linhas.size() - 6), linhas.size()));
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private void abrirBI(Tema.Botao botao) {
+        File raiz = new File("").getAbsoluteFile();
+        if (!new File(raiz, "app_bi.py").exists()) {
+            JOptionPane.showMessageDialog(this,
+                    "Não encontrei o arquivo app_bi.py na pasta do projeto:\n" + raiz,
+                    "BI interativo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        botao.setEnabled(false);
+        botao.setText("Abrindo o BI…");
+
+        new Thread(() -> {
+            String erro = null;
+            File log = new File(System.getProperty("java.io.tmpdir"), "vetcare_bi.log");
+            try {
+                if (!biRodando()) {
+                    ProcessBuilder pb = new ProcessBuilder(comandoBI());
+                    pb.directory(raiz);
+                    pb.redirectErrorStream(true);
+                    pb.redirectOutput(ProcessBuilder.Redirect.to(log));
+                    try {
+                        processoBI = pb.start();
+                    } catch (IOException ex) {
+                        erro = "Não consegui iniciar o Python.\n"
+                                + "Confirme se o ambiente virtual foi criado e as dependências instaladas:\n"
+                                + "python3 -m venv .venv  •  source .venv/bin/activate  •  pip install -r requirements.txt";
+                    }
+
+                    // Espera o servidor responder (até ~30 s)
+                    for (int i = 0; erro == null && i < 60 && !biRodando(); i++) {
+                        if (!processoBI.isAlive()) {
+                            erro = "O BI foi encerrado ao iniciar. Últimas linhas do log:\n\n" + fimDoLog(log);
+                        } else {
+                            Thread.sleep(500);
+                        }
+                    }
+                    if (erro == null && !biRodando()) erro = "O BI demorou demais para iniciar. Log em:\n" + log;
+                }
+
+                if (erro == null) {
+                    URI endereco = new URI("http://localhost:" + PORTA_BI);
+                    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                        Desktop.getDesktop().browse(endereco);
+                    } else {
+                        erro = "O BI está no ar, mas não consegui abrir o navegador.\nAcesse: " + endereco;
+                    }
+                }
+            } catch (Exception ex) {
+                erro = "Erro ao abrir o BI: " + ex.getMessage();
+            }
+
+            final String mensagem = erro;
+            SwingUtilities.invokeLater(() -> {
+                botao.setEnabled(true);
+                botao.setText("Abrir BI interativo");
+                if (mensagem != null) {
+                    JOptionPane.showMessageDialog(this, mensagem, "BI interativo", JOptionPane.WARNING_MESSAGE);
+                }
+            });
+        }, "abrir-bi").start();
     }
 
     private Tema.Cartao criarCard(String titulo, JLabel lblValor, Color cor) {

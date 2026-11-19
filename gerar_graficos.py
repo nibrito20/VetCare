@@ -1,12 +1,3 @@
-"""
-Gera os 6 gráficos estáticos exibidos no Dashboard do app Java (pasta graficos/).
-
-Uso (com o ambiente virtual ligado):
-    python gerar_graficos.py
-
-Os gráficos vêm SEMPRE do banco de dados. Se o banco não responder, nada é gerado
-(nenhum dado fictício é criado) e os gráficos antigos continuam como estavam.
-"""
 import math
 import os
 import re

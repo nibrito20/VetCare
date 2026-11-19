@@ -39,11 +39,9 @@ public class Main extends JFrame {
 
     private static final Locale PT_BR = Locale.forLanguageTag("pt-BR");
 
-    // ---------- Campos do CRUD ----------
     private JTextField txtDonoCpf, txtDonoNome, txtDonoTelefone, txtDonoCidade, txtDonoRua, txtDonoBairro, txtDonoNumero;
     private JTextField txtAnimalCodigo, txtAnimalNome, txtAnimalEspecie, txtAnimalRaca, txtAnimalIdade, txtAnimalDia, txtAnimalMes, txtAnimalAno, txtAnimalSexo, txtAnimalCpfDono;
 
-    // ---------- Consultas ----------
     private final DefaultTableModel modeloTabela = modeloSomenteLeitura();
     private final JLabel lblResultados = Tema.textoSuave(" ");
     private Tema.Botao btnExecutarConsulta;
@@ -105,7 +103,7 @@ public class Main extends JFrame {
             "SELECT * FROM vw_Presricoes_Detalhadas"
     };
 
-    // ---------- Dashboard: descrição de cada gráfico estático ----------
+
     private static final String[] GRAFICOS_DESCRICAO = {
             "Quantos atendimentos caíram em cada faixa de custo. As linhas marcam a média (tracejada) e a mediana.",
             "Curva suave da distribuição dos custos: os picos mostram onde os valores mais se concentram.",
@@ -115,13 +113,10 @@ public class Main extends JFrame {
             "Junta boxplot, histograma e curva de densidade no mesmo eixo, com média e mediana marcadas."
     };
 
-    // ---------- BI interativo (Streamlit) ----------
     private static final int PORTA_BI = 8501;
     private volatile Process processoBI;
 
-    // ---------- Início: últimos atendimentos ----------
-    // Ordena pelo código (maior = mais recente). Se a tabela tiver uma coluna de data,
-    // troque o ORDER BY por ela (ex.: ORDER BY a.Data DESC).
+
     private static final String SQL_RECENTES =
             "SELECT a.Codigo AS Codigo, an.Nome AS Animal, d.Nome AS Dono, f.Nome AS Veterinario, " +
                     "a.Diagnostico AS Diagnostico, a.Nivel_de_Gravidade AS Gravidade, a.Custo AS Custo " +
@@ -134,23 +129,21 @@ public class Main extends JFrame {
     private final DefaultTableModel modeloRecentes = modeloSomenteLeitura();
     private final JLabel lblRecentes = Tema.textoSuave(" ");
 
-    // ---------- Dashboard ----------
     private final List<JLabel> lblsClientes = new ArrayList<>();
     private final List<JLabel> lblsAnimais = new ArrayList<>();
     private final List<JLabel> lblsAtendimentos = new ArrayList<>();
     private final List<JLabel> lblsMedia = new ArrayList<>();
 
-    // ---------- Estado da conexão ----------
     private final Tema.IndicadorStatus statusBanco = new Tema.IndicadorStatus();
-    private Boolean bancoOnline = null;     // null = ainda não verificado
-    private int versaoIndicadores = 0;      // descarta respostas antigas
+    private Boolean bancoOnline = null;
+    private int versaoIndicadores = 0;
 
-    // ---------- Navegação ----------
+
     private static final String[] IDS = {"inicio", "crud", "consultas", "procedures", "dashboard"};
     private static final String[] MENU = {"Início", "Gestão (CRUD)", "Consultas e Views", "Procedures", "Dashboard"};
     private static final Tema.Icone[] ICONES = {Tema.Icone.INICIO, Tema.Icone.CADASTRO,
             Tema.Icone.CONSULTAS, Tema.Icone.PROCEDURES, Tema.Icone.DASHBOARD};
-    // O índice 0 (Início) não exibe cabeçalho: a própria tela já tem a faixa de boas-vindas.
+
     private static final String[] TITULOS = {
             "Início",
             "Gestão de Donos e Animais",
@@ -164,7 +157,7 @@ public class Main extends JFrame {
             "Execute procedures armazenadas diretamente do sistema.",
             "Indicadores gerais e gráficos de distribuição dos atendimentos."};
 
-    // Menu lateral (recolhível)
+
     private static final int LARGURA_ABERTA = 270;
     private static final int LARGURA_FECHADA = 84;
     private final List<Tema.BotaoMenu> botoesMenu = new ArrayList<>();
@@ -205,21 +198,19 @@ public class Main extends JFrame {
         add(direita, BorderLayout.CENTER);
 
         registrarAtalhos();
-        navegar(0); // já dispara atualizarIndicadores()
+        navegar(0);
 
-        // Reverifica a conexão de tempos em tempos (e recarrega os dados quando ela volta)
+
         new javax.swing.Timer(15000, e -> verificarConexao()).start();
 
-        // Se este app iniciou o BI, desliga o servidor ao fechar a janela
+
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             Process p = processoBI;
             if (p != null) p.destroy();
         }));
     }
 
-    // =====================================================================
-    //  Estrutura: sidebar + cabeçalho
-    // =====================================================================
+
     private JPanel criarSidebar() {
         sidebar = new JPanel(new BorderLayout());
         sidebar.setBackground(Color.WHITE);
@@ -327,15 +318,11 @@ public class Main extends JFrame {
         botoesMenu.get(i).setSelected(true);
         lblTitulo.setText(TITULOS[i]);
         lblSubtitulo.setText(SUBTITULOS[i]);
-        cabecalho.setVisible(i != 0); // o Início não repete título/subtítulo
+        cabecalho.setVisible(i != 0);
         if (i == 0 || i == 4) atualizarIndicadores();
     }
 
-    // =====================================================================
-    //  Atalhos de teclado
-    //    Cmd/Ctrl + 1..5 : trocar de tela      Cmd/Ctrl + B : abrir/fechar menu
-    //    F5              : executar consulta (Consultas) ou atualizar dados (Início/Dashboard)
-    // =====================================================================
+
     private void registrarAtalhos() {
         int mod = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
         InputMap im = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -364,9 +351,7 @@ public class Main extends JFrame {
         };
     }
 
-    // =====================================================================
-    //  0. Início
-    // =====================================================================
+
     private JPanel criarPainelInicio() {
         JPanel painel = Tema.painel(new BorderLayout(0, 22));
         // Sem cabeçalho nesta tela, então o respiro do topo vem daqui
@@ -470,9 +455,7 @@ public class Main extends JFrame {
         for (JLabel l : labels) l.setText(texto);
     }
 
-    // =====================================================================
-    //  1. CRUD
-    // =====================================================================
+
     private JPanel criarPainelCRUD() {
         JPanel principal = Tema.painel(new GridLayout(1, 2, 20, 0));
 
@@ -662,9 +645,7 @@ public class Main extends JFrame {
         return cartao;
     }
 
-    // =====================================================================
-    //  2. Consultas e Views
-    // =====================================================================
+
     private JPanel criarPainelConsultas() {
         JPanel painel = Tema.painel(new BorderLayout(0, 18));
 
@@ -947,9 +928,7 @@ public class Main extends JFrame {
                 + ". Para dados em tempo real, use o BI.";
     }
 
-    // =====================================================================
-    //  BI interativo (Streamlit): inicia o servidor e abre o navegador
-    // =====================================================================
+
     private static boolean biRodando() {
         try (Socket s = new Socket()) {
             s.connect(new InetSocketAddress("localhost", PORTA_BI), 300);
@@ -1008,7 +987,7 @@ public class Main extends JFrame {
                                 + "python3 -m venv .venv  •  source .venv/bin/activate  •  pip install -r requirements.txt";
                     }
 
-                    // Espera o servidor responder (até ~30 s)
+
                     for (int i = 0; erro == null && i < 60 && !biRodando(); i++) {
                         if (!processoBI.isAlive()) {
                             erro = "O BI foi encerrado ao iniciar. Últimas linhas do log:\n\n" + fimDoLog(log);
@@ -1052,15 +1031,12 @@ public class Main extends JFrame {
         return card;
     }
 
-    // =====================================================================
-    //  Estado da conexão
-    // =====================================================================
+
     private void definirStatusBanco(boolean ok) {
         bancoOnline = ok;
         statusBanco.setEstado(ok ? Tema.IndicadorStatus.Estado.ONLINE : Tema.IndicadorStatus.Estado.OFFLINE);
     }
 
-    /** Teste leve de conexão. Se o banco voltou depois de estar fora, recarrega os dados. */
     private void verificarConexao() {
         executarAsync(
                 () -> {
@@ -1077,9 +1053,7 @@ public class Main extends JFrame {
                 c -> { });
     }
 
-    // =====================================================================
-    //  Acesso a dados
-    // =====================================================================
+
     private static final class DadosTabela {
         final List<String> colunas = new ArrayList<>();
         final List<Object[]> linhas = new ArrayList<>();
@@ -1168,7 +1142,6 @@ public class Main extends JFrame {
         }
     }
 
-    /** Lê todo o ResultSet para memória (pode rodar fora da thread da interface). */
     private static DadosTabela lerResultSet(ResultSet rs) throws SQLException {
         DadosTabela d = new DadosTabela();
         ResultSetMetaData meta = rs.getMetaData();
@@ -1182,7 +1155,6 @@ public class Main extends JFrame {
         return d;
     }
 
-    /** Aplica os dados ao modelo (chamar apenas na thread da interface). */
     private static void aplicarNaTabela(DefaultTableModel modelo, DadosTabela d) {
         modelo.setDataVector(d.linhas.toArray(new Object[0][]), d.colunas.toArray());
     }
@@ -1193,14 +1165,7 @@ public class Main extends JFrame {
         };
     }
 
-    // =====================================================================
-    //  Execução em segundo plano
-    // =====================================================================
 
-    /**
-     * Roda a tarefa fora da thread da interface. O aviso de "carregando" só aparece se a
-     * tarefa demorar mais de 250 ms, para não piscar em consultas rápidas.
-     */
     private <T> void executarAsync(Callable<T> tarefa, Consumer<T> sucesso,
                                    Consumer<Exception> falha, Consumer<Boolean> carregando) {
         javax.swing.Timer atraso = new javax.swing.Timer(250, e -> carregando.accept(true));
@@ -1231,11 +1196,8 @@ public class Main extends JFrame {
         setCursor(ocupado ? Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR) : Cursor.getDefaultCursor());
     }
 
-    // =====================================================================
-    //  Exportação CSV
-    // =====================================================================
 
-    /** CSV com ';' como separador e UTF-8 com BOM: abre direto no Excel em português. */
+
     private void exportarCSV(DefaultTableModel modelo, String nomeSugerido) {
         JFileChooser fc = new JFileChooser();
         fc.setDialogTitle("Exportar resultado para CSV");

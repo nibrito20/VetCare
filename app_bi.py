@@ -1,10 +1,3 @@
-"""
-VetCare BI - painel interativo (Streamlit + Plotly)
-
-Como rodar (na raiz do projeto, onde fica o config.properties):
-    pip install -r requirements.txt
-    streamlit run app_bi.py
-"""
 import math
 import os
 import re
@@ -45,9 +38,6 @@ GRUPOS = {"Nenhum": None, "Espécie": "Especie", "Gravidade": "Gravidade",
 st.set_page_config(page_title="VetCare BI", page_icon="🐾", layout="wide")
 
 
-# =====================================================================
-#  Acesso ao banco (usa o mesmo config.properties do app Java)
-# =====================================================================
 def ler_config() -> dict:
     cfg = {}
     if os.path.exists(CONFIG_PATH):
@@ -85,7 +75,7 @@ def get_engine():
 
 SQL_ATENDIMENTOS = """
 SELECT a.Codigo AS Atendimento, a.Custo, a.Diagnostico, a.Nivel_de_Gravidade AS Gravidade,
-       a.Status, a.Dia AS DiaAt, a.Mes AS MesAt, a.Ano AS AnoAt, a.Horario,
+       a.Atendimento_TIPO, a.Status, a.Dia AS DiaAt, a.Mes AS MesAt, a.Ano AS AnoAt, a.Horario,
        an.Codigo AS CodAnimal, an.Nome AS Animal, an.Especie, an.Raca, an.Idade, an.Sexo,
        d.Nome AS Dono, d.Cidade, f.Nome AS Veterinario
 FROM Atendimento a
@@ -114,6 +104,11 @@ def preparar(df: pd.DataFrame) -> pd.DataFrame:
 
     for col in ["Especie", "Raca", "Gravidade", "Diagnostico", "Veterinario", "Cidade", "Status", "Sexo"]:
         df[col] = df[col].fillna("Não informado").astype(str)
+
+    if "Atendimento_TIPO" in df.columns:
+        rotina = (df["Gravidade"] == "Não informado") & (pd.to_numeric(df["Atendimento_TIPO"], errors="coerce") == 1)
+        df.loc[rotina, "Gravidade"] = "Rotina"
+
     return df
 
 

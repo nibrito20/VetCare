@@ -42,6 +42,7 @@ VetCare/
 │   └── Main.java              # Ponto de entrada da aplicação
 ├── sql/
 │   └── consultas.sql          # Consultas SQL do projeto
+│   └── vetcare.sql            # Dump do banco (tabelas, views, procedures, triggers e dados)
 ├── imagens/                   # Logo do sistema (logo.png e logo_icone.png)
 ├── graficos/                  # Gráficos (PNG) gerados pelo script Python
 ├── .streamlit/

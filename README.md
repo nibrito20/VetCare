@@ -93,7 +93,20 @@ git clone https://github.com/nibrito20/VetCare.git
 cd VetCare
 ```
 
-### 2. Configurar a conexão com o banco
+### 2. Importar o banco de dados
+
+O arquivo `sql/vetcare.sql` contém as tabelas, views, procedures, triggers e os dados de exemplo. Com o MySQL rodando, execute na raiz do projeto:
+
+```bash
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS vetcare"
+mysql -u root -p vetcare < sql/vetcare.sql
+```
+
+> O script recria as tabelas (`DROP TABLE` + `CREATE TABLE`). Se você já tem um banco `vetcare` com dados próprios, eles serão substituídos.
+
+Se preferir uma interface gráfica, no DBeaver clique com o botão direito no banco `vetcare` e use **Tools → Execute script**.
+
+### 3. Configurar a conexão com o banco
 
 O arquivo `config.properties` **não é versionado** (por conter dados sensíveis, como senha). Você precisa criá-lo localmente:
 
@@ -109,7 +122,7 @@ db.senha=SUA_SENHA_AQUI
 
 Esse mesmo arquivo é usado pelo sistema Java, pelo `gerar_graficos.py` e pelo `app_bi.py`.
 
-### 3. Rodar a aplicação Java
+### 4. Rodar a aplicação Java
 
 Abra `src/Main.java` e execute. Se tudo estiver configurado corretamente, a interface do sistema será exibida.
 
